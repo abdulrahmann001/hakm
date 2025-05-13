@@ -1,0 +1,85 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LogisticRegression, LinearRegression
+from sklearn.metrics import confusion_matrix
+from sklearn import metrics
+
+### ─── Titanic Dataset (Logistic Regression) ─── ###
+titanic = pd.read_csv('titanic.csv')
+
+# Fill missing Age using average by Pclass
+avg1 = titanic[titanic['Pclass'] == 1]['Age'].mean()
+avg2 = titanic[titanic['Pclass'] == 2]['Age'].mean()
+avg3 = titanic[titanic['Pclass'] == 3]['Age'].mean()
+def fix_age(cols):
+    age, pclass = cols[1], cols[0]
+    if pd.isnull(age):
+        return avg1 if pclass == 1 else avg2 if pclass == 2 else avg3
+    return age
+titanic['Age'] = titanic[['Pclass','Age']].apply(fix_age, axis=1)
+
+# Fill missing Embarked with mode
+titanic['Embarked'].fillna(titanic['Embarked'].mode()[0], inplace=True)
+
+# Drop unused column
+titanic.drop('Cabin', axis=1, inplace=True)
+
+# Encode categorical columns
+sex = pd.get_dummies(titanic['Sex'], drop_first=True)
+embarked = pd.get_dummies(titanic['Embarked'], drop_first=True)
+
+# Add encoded columns
+titanic['Male'] = sex
+titanic['Embarked_Q'] = embarked.get('Q', 0)
+titanic['Embarked_S'] = embarked.get('S', 0)
+
+# Drop text columns
+titanic.drop(['PassengerId', 'Name', 'Sex', 'Ticket', 'Embarked'], axis=1, inplace=True)
+
+# Split features and target
+X = titanic.drop('Survived', axis=1)
+y = titanic['Survived']
+x_train, x_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Logistic Regression Model
+logmodel = LogisticRegression(max_iter=200)
+logmodel.fit(x_train, y_train)
+y_pred = logmodel.predict(x_test)
+
+# Logistic model results
+print("Logistic Regression Score:", logmodel.score(x_test, y_test))
+print("Confusion Matrix:\n", confusion_matrix(y_test, y_pred))
+
+
+### ─── USA Housing Dataset (Linear Regression) ─── ###
+data = pd.read_csv('USA_Housing.csv')
+
+# Split features and target
+y = data['Price']
+x = data.drop(['Price', 'Address'], axis=1)
+x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=42)
+
+# Linear Regression Model
+model = LinearRegression()
+model.fit(x_train, y_train)
+y_pred = model.predict(x_test)
+
+# Linear model results
+print("Mean Absolute Error:", metrics.mean_absolute_error(y_test, y_pred))
+print("Mean Squared Error:", metrics.mean_squared_error(y_test, y_pred))
+print("Root Mean Squared Error:", metrics.root_mean_squared_error(y_test, y_pred))
+print("Linear Regression Score:", model.score(x_test, y_test))
+
+# Predict with new custom input
+x_new_test = pd.DataFrame({
+    'Avg. Area Income': [50000],
+    'Avg. Area House Age': [5],
+    'Avg. Area Number of Rooms': [7],
+    'Avg. Area Number of Bedrooms': [4],
+    'Area Population': [200000]
+})
+y_pred = model.predict(x_new_test)
+print("Predicted House Price:", y_pred)
