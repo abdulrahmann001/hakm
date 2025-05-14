@@ -76,3 +76,76 @@ x_new_test = pd.DataFrame({
 })
 y_pred = model.predict(x_new_test)
 print("Predicted House Price:", y_pred)
+
+
+
+
+
+
+
+
+
+
+# Show first five rows
+print(df.head())
+
+# Dataset info
+print(df.info())
+
+# Top 5 Zip Codes with most 911 calls
+print("Top 5 Zip Codes with most 911 calls:")
+print(df['zip'].value_counts().head())
+
+# Top 5 Townships with most 911 calls
+print("Top 5 Townships with most 911 calls:")
+print(df['twp'].value_counts().head())
+
+# Number of unique issues (calls for different titles)
+print("Number of unique issues (title):")
+print(df['title'].nunique())
+
+# Create a new column 'Reason' from the 'title' column
+df['Reason'] = df['title'].apply(lambda x: x.split(':')[0])
+
+# Number of 911 calls for each Reason (EMS, Fire, Traffic)
+print("Call counts for each Reason:")
+print(df['Reason'].value_counts())
+
+# Display type before conversion
+print("Type before conversion:", type(df['timeStamp'][0]))
+
+# Convert timeStamp to datetime
+df['timeStamp'] = pd.to_datetime(df['timeStamp'])
+
+# Display type after conversion
+print("Type after conversion:", type(df['timeStamp'][0]))
+
+# Extract Hour, Month, Day of Week from timeStamp column
+df['Hour'] = df['timeStamp'].apply(lambda time: time.hour)
+df['Month'] = df['timeStamp'].apply(lambda time: time.month)
+df['Day of Week'] = df['timeStamp'].apply(lambda time: time.dayofweek)
+
+# Map day of week numbers to names
+dmap = {0:'Mon',1:'Tue',2:'Wed',3:'Thu',4:'Fri',5:'Sat',6:'Sun'}
+df['Day of Week'] = df['Day of Week'].map(dmap)
+
+# Create pivot table: index = Day of Week, columns = Hour
+dayHour = df.pivot_table(index='Day of Week', columns='Hour', values='Reason', aggfunc='count')
+
+# Draw a heatmap
+plt.figure(figsize=(12,6))
+sns.heatmap(dayHour, cmap='viridis')
+plt.title('911 Calls Heatmap by Day and Hour')
+plt.show()
+
+# Extract date from timeStamp and store in new column
+df['Date'] = df['timeStamp'].apply(lambda time: time.date())
+
+# Plot number of calls per day
+df.groupby('Date').count()['twp'].plot()
+plt.title('911 Calls per Day')
+plt.xlabel('Date')
+plt.ylabel('Number of Calls')
+plt.tight_layout()
+plt.show()
+
